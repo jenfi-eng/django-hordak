@@ -21,8 +21,8 @@ Additionally, there are models which related to the import of external bank stat
   create a transaction for the statement line.
 """
 
-from django.contrib.postgres.fields.array import ArrayField
-from django.db import models
+from django.db import connection, models
+from django.db import transaction
 from django.db import transaction as db_transaction
 from django.db.models import JSONField
 from django.utils import timezone
@@ -34,8 +34,13 @@ from model_utils import Choices
 from moneyed import CurrencyDoesNotExist, Money
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 
-from hordak import defaults, exceptions
-from hordak.defaults import DECIMAL_PLACES, MAX_DIGITS
+from hordak import exceptions
+from hordak.defaults import (
+    DECIMAL_PLACES,
+    MAX_DIGITS,
+    get_internal_currency,
+    project_currencies,
+)
 from hordak.utilities.currency import Balance
 from hordak.utilities.dreprecation import deprecated
 
@@ -50,6 +55,10 @@ def json_default():
     return {}
 
 
+def get_currency_choices():
+    return CURRENCY_CHOICES
+
+
 class AccountQuerySet(models.QuerySet):
     def net_balance(self, raw=False):
         return sum((account.balance(raw) for account in self), Balance())
@@ -58,6 +67,16 @@ class AccountQuerySet(models.QuerySet):
 class AccountManager(TreeManager):
     def get_by_natural_key(self, uuid):
         return self.get(uuid=uuid)
+
+
+def _enforce_account():
+    with connection.cursor() as curs:
+        # postgresql has this enforced by a trigger, but MySQL/MariaDB does not support deferred constraint
+        # triggers, and does not support triggers updating the table they are triggered from
+        # so we have to do it by calling a procedure here instead
+        # (https://stackoverflow.com/a/15300941/1908381)
+        if connection.vendor == "mysql":
+            curs.callproc("update_full_account_codes")
 
 
 class Account(MPTTModel):
@@ -133,10 +152,9 @@ class Account(MPTTModel):
         "statements into it and that it only supports a single currency",
         verbose_name=_("is bank account"),
     )
-    currencies = ArrayField(
-        models.CharField(max_length=3, choices=CURRENCY_CHOICES),
+    currencies = JSONField(
         db_index=True,
-        default=defaults.CURRENCIES,
+        default=project_currencies,
         verbose_name=_("currencies"),
     )
 
@@ -171,6 +189,7 @@ class Account(MPTTModel):
                 "currencies",
             ]
         super(Account, self).save(*args, update_fields=update_fields, **kwargs)
+        transaction.on_commit(_enforce_account)
 
         do_refresh = False
 
@@ -495,6 +514,14 @@ class LegManager(models.Manager):
 CustomLegManager = LegManager.from_queryset(LegQuerySet)
 
 
+def _enforce_leg(transaction_id: int):
+    with connection.cursor() as curs:
+        # postgresql has this enforced by a trigger, but MySQL/MariaDB does not support deferred constraint
+        # triggers so we have to do it by calling a procedure here instead
+        if connection.vendor == "mysql":
+            curs.callproc("check_leg", [transaction_id])
+
+
 class Leg(models.Model):
     """The leg of a transaction
 
@@ -531,7 +558,7 @@ class Leg(models.Model):
         max_digits=MAX_DIGITS,
         decimal_places=DECIMAL_PLACES,
         help_text="Record debits as positive, credits as negative",
-        default_currency=defaults.INTERNAL_CURRENCY,
+        default_currency=get_internal_currency,
         verbose_name=_("amount"),
     )
     description = models.TextField(
@@ -543,7 +570,10 @@ class Leg(models.Model):
     def save(self, *args, **kwargs):
         if self.amount.amount == 0:
             raise exceptions.ZeroAmountError()
-        return super(Leg, self).save(*args, **kwargs)
+
+        leg = super(Leg, self).save(*args, **kwargs)
+        transaction.on_commit(lambda: _enforce_leg(transaction_id=self.transaction_id))
+        return leg
 
     def natural_key(self):
         return (self.uuid,)
