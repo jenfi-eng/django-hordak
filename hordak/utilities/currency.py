@@ -203,12 +203,18 @@ def currency_exchange(
 
         # Source currency into trading account
         Leg.objects.create(
-            transaction=transaction, account=source, amount=source_amount
+            transaction=transaction,
+            account=source,
+            amount=source_amount,
+            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_amount=abs(source_amount),
         )
         Leg.objects.create(
             transaction=transaction,
             account=trading_account,
             amount=-(source_amount - fee_amount),
+            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_amount=abs(source_amount - fee_amount),
         )
 
         # Any fees
@@ -218,14 +224,24 @@ def currency_exchange(
                 account=fee_destination,
                 amount=-fee_amount,
                 description="Fees",
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=abs(fee_amount),
             )
 
         # Destination currency out of trading account
         Leg.objects.create(
-            transaction=transaction, account=trading_account, amount=destination_amount
+            transaction=transaction,
+            account=trading_account,
+            amount=destination_amount,
+            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_amount=abs(destination_amount),
         )
         Leg.objects.create(
-            transaction=transaction, account=destination, amount=-destination_amount
+            transaction=transaction,
+            account=destination,
+            amount=-destination_amount,
+            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_amount=abs(destination_amount),
         )
 
     return transaction

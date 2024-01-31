@@ -1,3 +1,5 @@
+from typing import Any
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -133,6 +135,17 @@ class LegForm(forms.ModelForm):
 
         return amount
 
+    def save(self, commit: bool = ...) -> Any:
+        amount = self.instance.amount
+
+        if amount.amount > 0:
+            self.instance.accounting_type = Leg.AccountingTypeChoices.CREDIT
+        else:
+            self.instance.accounting_type = Leg.AccountingTypeChoices.DEBIT
+
+        self.instance.accounting_amount = abs(amount)
+        return super().save(commit)
+
 
 class BaseLegFormSet(BaseInlineFormSet):
     def __init__(self, **kwargs):
@@ -240,17 +253,31 @@ class CurrencyTradeForm(forms.Form):
             description=self.cleaned_data.get("description")
         )
         Leg.objects.create(
-            transaction=transaction, account=source_account, amount=source_amount
+            transaction=transaction,
+            account=source_account,
+            amount=source_amount,
+            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_amount=source_amount,
         )
         Leg.objects.create(
-            transaction=transaction, account=trading_account, amount=-source_amount
+            transaction=transaction,
+            account=trading_account,
+            amount=-source_amount,
+            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_amount=source_amount,
         )
         Leg.objects.create(
-            transaction=transaction, account=trading_account, amount=destination_amount
+            transaction=transaction,
+            account=trading_account,
+            amount=destination_amount,
+            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_amount=abs(destination_amount),
         )
         Leg.objects.create(
             transaction=transaction,
             account=destination_account,
             amount=-destination_amount,
+            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_amount=abs(destination_amount),
         )
         return transaction

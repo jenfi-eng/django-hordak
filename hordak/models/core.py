@@ -21,6 +21,7 @@ Additionally, there are models which related to the import of external bank stat
   create a transaction for the statement line.
 """
 
+from django.core.validators import MinValueValidator
 from django.db import connection, models
 from django.db import transaction
 from django.db import transaction as db_transaction
@@ -308,6 +309,21 @@ class Account(MPTTModel):
 
         return legs.sum_to_balance() * (1 if raw else self.sign) + self._zero_balance()
 
+    def accounting_simple_balance(
+        self, as_of=None, raw=False, leg_query=None, **kwargs
+    ):
+        legs = self.legs
+        if as_of:
+            legs = legs.filter(transaction__date__lte=as_of)
+
+        if leg_query or kwargs:
+            leg_query = leg_query or models.Q()
+            legs = legs.filter(leg_query, **kwargs)
+
+        legs.sum_to_dr_cr()
+
+        return legs.sum_to_balance() * (1 if raw else self.sign) + self._zero_balance()
+
     def _zero_balance(self):
         """Get a balance for this account with all currencies set to zero"""
         return Balance([Money("0", currency) for currency in self.currencies])
@@ -517,6 +533,17 @@ class LegQuerySet(models.QuerySet):
         result = self.values("amount_currency").annotate(total=models.Sum("amount"))
         return Balance([Money(r["total"], r["amount_currency"]) for r in result])
 
+    def sum_to_dr_cr(self):
+        res = self.values("amount_currency", "accounting_type").annotate(
+            total=models.Sum("amount")
+        )
+        return res
+
+    def accounting_sum_to_balance(self):
+        self.sum_to_dr_cr()
+
+        # Sign is
+
 
 class LegManager(models.Manager):
     def get_by_natural_key(self, uuid):
@@ -588,6 +615,7 @@ class Leg(models.Model):
         help_text="Amount adheres to double-entry accounting rules.",
         default_currency=get_internal_currency,
         verbose_name=_("Accounting Amount"),
+        validators=[MinValueValidator(0.01)],
     )
 
     class AccountingTypeChoices(models.TextChoices):
@@ -823,10 +851,18 @@ class StatementLine(models.Model):
 
         transaction = Transaction.objects.create()
         Leg.objects.create(
-            transaction=transaction, account=from_account, amount=+(self.amount * -1)
+            transaction=transaction,
+            account=from_account,
+            amount=+(self.amount * -1),
+            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_amount=self.amount,
         )
         Leg.objects.create(
-            transaction=transaction, account=to_account, amount=-(self.amount * -1)
+            transaction=transaction,
+            account=to_account,
+            amount=-(self.amount * -1),
+            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_amount=self.amount,
         )
 
         transaction.date = self.date

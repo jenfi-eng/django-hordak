@@ -15,10 +15,18 @@ class AccountTransactionsViewTestCase(DataProvider, TestCase):
         )
         transaction = Transaction.objects.create()
         Leg.objects.create(
-            amount=-10, account=self.bank_account, transaction=transaction
+            amount=-10,
+            account=self.bank_account,
+            transaction=transaction,
+            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_amount=10,
         )
         Leg.objects.create(
-            amount=10, account=self.income_account, transaction=transaction
+            amount=10,
+            account=self.income_account,
+            transaction=transaction,
+            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_amount=10,
         )
 
         self.view_url = reverse(

@@ -143,12 +143,21 @@ class TransactionsReconcileView(LoginRequiredMixin, ListView):
             # Create the inbound transaction leg
             bank_account = self.object.statement_import.bank_account
             amount = self.object.amount * -1
+
+            if self.object.amount > 0:
+                # OPPOSITE - Always pick the otherside of the transaction
+                accounting_type = Leg.AccountingTypeChoices.DEBIT
+            else:
+                accounting_type = Leg.AccountingTypeChoices.CREDIT
+
             Leg.objects.create(
                 transaction=transaction,
                 account=bank_account,
                 amount=amount,
                 # Note that bank accounts can only have one currency
                 amount_currency=bank_account.currencies[0],
+                accounting_type=accounting_type,
+                accounting_amount=abs(self.object.amount),
             )
 
             # We need to create a new leg formset in order to pass in the

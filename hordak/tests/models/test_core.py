@@ -169,10 +169,18 @@ class AccountTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
             Leg.objects.create(
-                transaction=transaction, account=account1, amount=Money(100, "EUR")
+                transaction=transaction,
+                account=account1,
+                amount=Money(100, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100, "EUR"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account2, amount=Money(-100, "EUR")
+                transaction=transaction,
+                account=account2,
+                amount=Money(-100, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(100, "EUR"),
             )
 
         self.assertEqual(account1.simple_balance(), Balance(100, "EUR"))
@@ -186,13 +194,25 @@ class AccountTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
             Leg.objects.create(
-                transaction=transaction, account=account1, amount=Money(100, "EUR")
+                transaction=transaction,
+                account=account1,
+                amount=Money(100, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100, "EUR"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account2, amount=Money(-40, "EUR")
+                transaction=transaction,
+                account=account2,
+                amount=Money(-40, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(40, "EUR"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account3, amount=Money(-60, "EUR")
+                transaction=transaction,
+                account=account3,
+                amount=Money(-60, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(60, "EUR"),
             )
 
         self.assertEqual(account1.simple_balance(), Balance(100, "EUR"))
@@ -206,18 +226,34 @@ class AccountTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create(date="2016-06-01")
             Leg.objects.create(
-                transaction=transaction, account=account1, amount=Money(100, "EUR")
+                transaction=transaction,
+                account=account1,
+                amount=Money(100, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100, "EUR"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account2, amount=Money(-100, "EUR")
+                transaction=transaction,
+                account=account2,
+                amount=Money(-100, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(100, "EUR"),
             )
 
             transaction = Transaction.objects.create(date="2016-06-15")
             Leg.objects.create(
-                transaction=transaction, account=account1, amount=Money(50, "EUR")
+                transaction=transaction,
+                account=account1,
+                amount=Money(50, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(50, "EUR"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account2, amount=Money(-50, "EUR")
+                transaction=transaction,
+                account=account2,
+                amount=Money(-50, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(50, "EUR"),
             )
 
         self.assertEqual(
@@ -254,12 +290,16 @@ class AccountTestCase(DataProvider, DbTransactionTestCase):
                 account=account1,
                 amount=100,
                 amount_currency="EUR",
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100, "EUR"),
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=account2,
                 amount=-100,
                 amount_currency="EUR",
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(100, "EUR"),
             )
 
             transaction = Transaction.objects.create(date="2016-06-15")
@@ -268,12 +308,16 @@ class AccountTestCase(DataProvider, DbTransactionTestCase):
                 account=account1,
                 amount=50,
                 amount_currency="EUR",
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(50, "EUR"),
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=account2,
                 amount=-50,
                 amount_currency="EUR",
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(50, "EUR"),
             )
 
         self.assertEqual(
@@ -292,18 +336,24 @@ class AccountTestCase(DataProvider, DbTransactionTestCase):
                 account=account1,
                 amount=50,
                 amount_currency="EUR",
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(50, "EUR"),
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=account1_child,
                 amount=50,
                 amount_currency="EUR",
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(50, "EUR"),
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=account2,
                 amount=-100,
                 amount_currency="EUR",
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(100, "EUR"),
             )
 
         self.assertEqual(account1.balance(), Balance(100, "EUR"))
@@ -514,13 +564,25 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
             Leg.objects.create(
-                transaction=transaction, account=account1, amount=Money(100.12, "USD")
+                transaction=transaction,
+                account=account1,
+                amount=Money(100.12, "USD"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100.12, "USD"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account2, amount=Money(-80.06, "USD")
+                transaction=transaction,
+                account=account2,
+                amount=Money(-80.06, "USD"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(80.06, "USD"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account2, amount=Money(-20.06, "USD")
+                transaction=transaction,
+                account=account2,
+                amount=Money(-20.06, "USD"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(20.06, "USD"),
             )
 
         self.assertEqual(Leg.objects.sum_to_balance(), Balance())
@@ -544,16 +606,22 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
                         transaction=transaction,
                         account=account1,
                         amount=Money(0.000002, "USD"),
+                        accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                        accounting_amount=Money(0.000002, "USD"),
                     ),
                     Leg(
                         transaction=transaction,
                         account=account2,
                         amount=Money(-0.000001, "USD"),
+                        accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                        accounting_amount=Money(0.000001, "USD"),
                     ),
                     Leg(
                         transaction=transaction,
                         account=account3,
                         amount=Money(-0.000001, "USD"),
+                        accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                        accounting_amount=Money(0.000001, "USD"),
                     ),
                 ]
             )
@@ -575,10 +643,18 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
             leg = Leg.objects.create(
-                transaction=transaction, account=account1, amount=Money(100, "USD")
+                transaction=transaction,
+                account=account1,
+                amount=Money(100, "USD"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100, "USD"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account2, amount=Money(-100, "USD")
+                transaction=transaction,
+                account=account2,
+                amount=Money(-100, "USD"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(100, "USD"),
             )
         self.assertEqual(leg.natural_key(), (leg.uuid,))
 
@@ -589,10 +665,18 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
             leg = Leg.objects.create(
-                transaction=transaction, account=account1, amount=Money(100, "USD")
+                transaction=transaction,
+                account=account1,
+                amount=Money(100, "USD"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100, "USD"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account2, amount=Money(-100, "USD")
+                transaction=transaction,
+                account=account2,
+                amount=Money(-100, "USD"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(100, "USD"),
             )
         self.assertEqual(Leg.objects.get_by_natural_key(*leg.natural_key()), leg)
 
@@ -614,10 +698,18 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
         with self.assertRaises(DatabaseError), db_transaction.atomic():
             # Also ensure we distinguish between currencies
             Leg.objects.create(
-                transaction=transaction, account=account, amount=Money(100, "EUR")
+                transaction=transaction,
+                account=account,
+                amount=Money(100, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100, "EUR"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account, amount=Money(-100, "GBP")
+                transaction=transaction,
+                account=account,
+                amount=Money(-100, "GBP"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(100, "GBP"),
             )
 
     def test_postgres_trigger_currency(self):
@@ -627,10 +719,18 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
 
         with self.assertRaises(DatabaseError):
             Leg.objects.create(
-                transaction=transaction, account=account, amount=Money(100, "EUR")
+                transaction=transaction,
+                account=account,
+                amount=Money(100, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=Money(100, "EUR"),
             )
             Leg.objects.create(
-                transaction=transaction, account=account, amount=Money(-100, "EUR")
+                transaction=transaction,
+                account=account,
+                amount=Money(-100, "EUR"),
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=Money(100, "EUR"),
             )
 
     def test_postgres_trigger_bank_accounts_are_asset_accounts(self):
@@ -646,10 +746,18 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
             leg1 = Leg.objects.create(
-                transaction=transaction, account=account1, amount=100
+                transaction=transaction,
+                account=account1,
+                amount=100,
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=100,
             )
             leg2 = Leg.objects.create(
-                transaction=transaction, account=account2, amount=-100
+                transaction=transaction,
+                account=account2,
+                amount=-100,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=100,
             )
 
         self.assertEqual(leg1.type, CREDIT)
@@ -673,8 +781,20 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
 
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
-            Leg.objects.create(transaction=transaction, account=account1, amount=100)
-            Leg.objects.create(transaction=transaction, account=account2, amount=-100)
+            Leg.objects.create(
+                transaction=transaction,
+                account=account1,
+                amount=100,
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=100,
+            )
+            Leg.objects.create(
+                transaction=transaction,
+                account=account2,
+                amount=-100,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=100,
+            )
 
         leg3 = Leg(transaction=transaction, account=account2, amount=Money(0, "EUR"))
         self.assertRaises(exceptions.ZeroAmountError, leg3.save)
@@ -687,9 +807,19 @@ class LegTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
             leg1 = Leg.objects.create(
-                transaction=transaction, account=account1, amount=100
+                transaction=transaction,
+                account=account1,
+                amount=100,
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=100,
             )
-            Leg.objects.create(transaction=transaction, account=account2, amount=-100)
+            Leg.objects.create(
+                transaction=transaction,
+                account=account2,
+                amount=-100,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=100,
+            )
 
         with self.assertRaises(IntegrityError):
             # Use update() to bypass the check in Leg.save()
@@ -798,10 +928,18 @@ class TransactionTestCase(DataProvider, DbTransactionTestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create()
             Leg.objects.create(
-                transaction=transaction, account=self.account1, amount=100
+                transaction=transaction,
+                account=self.account1,
+                amount=100,
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=100,
             )
             Leg.objects.create(
-                transaction=transaction, account=self.account2, amount=-100
+                transaction=transaction,
+                account=self.account2,
+                amount=-100,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=100,
             )
 
         self.assertEqual(transaction.balance(), 0)

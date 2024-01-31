@@ -246,16 +246,40 @@ class CommunalHouseholdTestCase(DataProvider, BalanceUtils, TestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create(date="2016-01-31")
             Leg.objects.create(
-                transaction=transaction, account=self.inc_housemate_1, amount=-620
+                transaction=transaction,
+                account=self.inc_housemate_1,
+                amount=-620,
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=620,
             )
             Leg.objects.create(
-                transaction=transaction, account=self.ex_rent, amount=500
+                transaction=transaction,
+                account=self.ex_rent,
+                amount=500,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=500,
             )
-            Leg.objects.create(transaction=transaction, account=self.ex_elec, amount=20)
             Leg.objects.create(
-                transaction=transaction, account=self.ex_rates, amount=30
+                transaction=transaction,
+                account=self.ex_elec,
+                amount=20,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=20,
             )
-            Leg.objects.create(transaction=transaction, account=self.ex_food, amount=70)
+            Leg.objects.create(
+                transaction=transaction,
+                account=self.ex_rates,
+                amount=30,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=30,
+            )
+            Leg.objects.create(
+                transaction=transaction,
+                account=self.ex_food,
+                amount=70,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=70,
+            )
 
             line1.transaction = transaction
             line1.save()
@@ -264,16 +288,40 @@ class CommunalHouseholdTestCase(DataProvider, BalanceUtils, TestCase):
         with db_transaction.atomic():
             transaction = Transaction.objects.create(date="2016-01-31")
             Leg.objects.create(
-                transaction=transaction, account=self.inc_housemate_2, amount=-620
+                transaction=transaction,
+                account=self.inc_housemate_2,
+                amount=-620,
+                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_amount=620,
             )
             Leg.objects.create(
-                transaction=transaction, account=self.ex_rent, amount=500
+                transaction=transaction,
+                account=self.ex_rent,
+                amount=500,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=500,
             )
-            Leg.objects.create(transaction=transaction, account=self.ex_elec, amount=20)
             Leg.objects.create(
-                transaction=transaction, account=self.ex_rates, amount=30
+                transaction=transaction,
+                account=self.ex_elec,
+                amount=20,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=20,
             )
-            Leg.objects.create(transaction=transaction, account=self.ex_food, amount=70)
+            Leg.objects.create(
+                transaction=transaction,
+                account=self.ex_rates,
+                amount=30,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=30,
+            )
+            Leg.objects.create(
+                transaction=transaction,
+                account=self.ex_food,
+                amount=70,
+                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_amount=70,
+            )
 
             line2.transaction = transaction
             line2.save()
