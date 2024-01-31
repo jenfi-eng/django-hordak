@@ -710,51 +710,61 @@ class Leg(models.Model):
         return self.accounting_dr_cr == self.AccountingTypeChoices.CREDIT
 
     def accounting_display_amount(self):
-        if self.account_type in Account.LHS_TYPES:
-            if self.is_accounting_debit():
-                # ex: Cash, DEBITed is Increase
-                return self.accounting_amount
-            else:
-                # ex: Cash, CREDITed is Decrease
-                return -self.accounting_amount
-        elif self.account_type in Account.RHS_TYPES:
-            if self.is_accounting_debit():
-                # ex: Liability, DEBITed is Decrease
-                return -self.accounting_amount
-            else:
-                # ex: Liability, CREDITed is Increase
-                return self.accounting_amount
+        return self._pos_neg() * self.accounting_amount
 
-        raise ValueError("Account type {} not supported".format(self.account_type))
+    # Withdraw/Deposit are "positive/negaive" ideas for a given account.
+    def is_withdraw(self):
+        return self._pos_neg() < 0
+
+    # Withdraw/Deposit are "positive/negaive" ideas for a given account.
+    def is_deposit(self):
+        return self._pos_neg() > 0
+
+    def _pos_neg(self):
+        pos_neg = 1
+
+        # Only LHS CR & RHS DR are negative
+        if (
+            (self.account_type in Account.LHS_TYPES) and self.is_accounting_credit()
+        ) or ((self.account_type in Account.RHS_TYPES) and self.is_accounting_debit()):
+            # ex: Cash, CREDITed is Decrease
+            # ex: Liability, DEBITed is Decrease
+            pos_neg = -1
+
+        return pos_neg
 
     def account_balance_after(self):
         """Get the balance of the account associated with this leg following the transaction"""
         # TODO: Consider moving to annotation,
         # particularly once we can count on Django 1.11's subquery support
+        return self.account.balance(leg_query=self._legs_after_query())
+
+    def accounting_balance_after(self):
+        return self.account.accounting_balance(leg_query=self._legs_after_query())
+
+    def _legs_after_query(self):
         transaction_date = self.transaction.date
-        return self.account.balance(
-            leg_query=(
-                models.Q(transaction__date__lt=transaction_date)
-                | (
-                    models.Q(transaction__date=transaction_date)
-                    & models.Q(transaction_id__lte=self.transaction_id)
-                )
-            )
+
+        return models.Q(transaction__date__lt=transaction_date) | (
+            models.Q(transaction__date=transaction_date)
+            & models.Q(transaction_id__lte=self.transaction_id)
         )
 
     def account_balance_before(self):
         """Get the balance of the account associated with this leg before the transaction"""
         # TODO: Consider moving to annotation,
         # particularly once we can count on Django 1.11's subquery support
+        return self.account.balance(leg_query=self._legs_before_query())
+
+    def accounting_balance_before(self):
+        return self.account.accounting_balance(leg_query=self._legs_before_query())
+
+    def _legs_before_query(self):
         transaction_date = self.transaction.date
-        return self.account.balance(
-            leg_query=(
-                models.Q(transaction__date__lt=transaction_date)
-                | (
-                    models.Q(transaction__date=transaction_date)
-                    & models.Q(transaction_id__lt=self.transaction_id)
-                )
-            )
+
+        return models.Q(transaction__date__lt=transaction_date) | (
+            models.Q(transaction__date=transaction_date)
+            & models.Q(transaction_id__lt=self.transaction_id)
         )
 
     class Meta:
