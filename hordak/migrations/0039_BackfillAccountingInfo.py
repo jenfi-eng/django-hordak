@@ -52,7 +52,7 @@ def backfill_accounting_fields(apps, schema_editor):
     # Backfill Account Type
 
     for type_str in Account.TYPES:
-        Leg.objects.filter(account__type=type_str).update(account_type=type_str[0])
+        Leg.objects.filter(account__type=type_str[0]).update(account_type=type_str[0])
 
     # #####################
 
@@ -65,8 +65,8 @@ def backfill_accounting_fields(apps, schema_editor):
         WITH TransactionSums AS (
             SELECT
                 l.transaction_id,
-                SUM(CASE WHEN l.accounting_dr_cr = 'DR' THEN l.amount ELSE 0 END) AS dr_sum,
-                SUM(CASE WHEN l.accounting_dr_cr = 'CR' THEN l.amount ELSE 0 END) AS cr_sum
+                SUM(CASE WHEN l.accounting_dr_cr = 'DR' THEN l.accounting_amount ELSE 0 END) AS dr_sum,
+                SUM(CASE WHEN l.accounting_dr_cr = 'CR' THEN l.accounting_amount ELSE 0 END) AS cr_sum
             FROM
                 {table_name} l
             GROUP BY
@@ -104,8 +104,8 @@ def backfill_accounting_fields(apps, schema_editor):
         FROM (
             SELECT
                 l.transaction_id,
-                SUM(CASE WHEN l.accounting_dr_cr = 'DR' THEN l.amount ELSE 0 END) AS dr_sum,
-                SUM(CASE WHEN l.accounting_dr_cr = 'CR' THEN l.amount ELSE 0 END) AS cr_sum
+                SUM(CASE WHEN l.accounting_dr_cr = 'DR' THEN l.accounting_amount ELSE 0 END) AS dr_sum,
+                SUM(CASE WHEN l.accounting_dr_cr = 'CR' THEN l.accounting_amount ELSE 0 END) AS cr_sum
             FROM
                 {table_name} l
             GROUP BY
