@@ -119,6 +119,9 @@ class Account(MPTTModel):
         ("EQ", "equity", "Equity"),  # Eg. Money from shares
         ("TR", "trading", "Currency Trading"),  # Used to represent currency conversions
     )
+    LHS_TYPES = [TYPES.asset, TYPES.expense]
+    RHS_TYPES = [TYPES.liability, TYPES.income, TYPES.equity, TYPES.trading]
+
     uuid = SmallUUIDField(
         default=uuid_default(), editable=False, verbose_name=_("uuid")
     )
@@ -309,6 +312,15 @@ class Account(MPTTModel):
 
         return legs.sum_to_balance() * (1 if raw else self.sign) + self._zero_balance()
 
+    def accounting_balance(self, as_of=None, raw=False, leg_query=None, **kwargs):
+        balances = [
+            account.accounting_simple_balance(
+                as_of=as_of, raw=raw, leg_query=leg_query, **kwargs
+            )
+            for account in self.get_descendants(include_self=True)
+        ]
+        return sum(balances, Balance())
+
     def accounting_simple_balance(
         self, as_of=None, raw=False, leg_query=None, **kwargs
     ):
@@ -320,9 +332,7 @@ class Account(MPTTModel):
             leg_query = leg_query or models.Q()
             legs = legs.filter(leg_query, **kwargs)
 
-        legs.sum_to_dr_cr()
-
-        return legs.sum_to_balance() * (1 if raw else self.sign) + self._zero_balance()
+        return legs.accounting_sum_to_balance(self.type) + self._zero_balance()
 
     def _zero_balance(self):
         """Get a balance for this account with all currencies set to zero"""
@@ -533,16 +543,40 @@ class LegQuerySet(models.QuerySet):
         result = self.values("amount_currency").annotate(total=models.Sum("amount"))
         return Balance([Money(r["total"], r["amount_currency"]) for r in result])
 
-    def sum_to_dr_cr(self):
-        res = self.values("amount_currency", "accounting_type").annotate(
-            total=models.Sum("amount")
+    # Here you're only dealing with one account type
+    def cr_dr_sets(self):
+        cr_set = (
+            self.filter(accounting_type=Leg.AccountingTypeChoices.CREDIT)
+            .values("accounting_amount_currency", "accounting_type", "account_type")
+            .annotate(total=models.Sum("accounting_amount"))
         )
-        return res
 
-    def accounting_sum_to_balance(self):
-        self.sum_to_dr_cr()
+        dr_set = (
+            self.filter(accounting_type=Leg.AccountingTypeChoices.DEBIT)
+            .values("accounting_amount_currency", "accounting_type", "account_type")
+            .annotate(total=models.Sum("accounting_amount"))
+        )
 
-        # Sign is
+        return cr_set, dr_set
+
+    def accounting_sum_to_balance(self, account_type):
+        cr_set, dr_set = self.cr_dr_sets()
+
+        # Is the account left side or right side of the accounting equation?
+        if account_type in Account.LHS_TYPES:
+            # LHS
+            return Balance(
+                [Money(r["total"], r["accounting_amount_currency"]) for r in dr_set]
+            ) - Balance(
+                [Money(r["total"], r["accounting_amount_currency"]) for r in cr_set]
+            )
+        else:
+            # RHS
+            return Balance(
+                [Money(r["total"], r["accounting_amount_currency"]) for r in cr_set]
+            ) - Balance(
+                [Money(r["total"], r["accounting_amount_currency"]) for r in dr_set]
+            )
 
 
 class LegManager(models.Manager):
@@ -625,10 +659,11 @@ class Leg(models.Model):
     accounting_type = models.CharField(
         max_length=2,
         choices=AccountingTypeChoices.choices,
-        null=True,
-        blank=True,
         db_index=True,
         verbose_name=_("Debit or Credit. Adheres to accounting rules."),
+    )
+    account_type = models.CharField(
+        max_length=2, choices=Account.TYPES, verbose_name=_("Account Type")
     )
 
     description = models.TextField(
@@ -640,6 +675,9 @@ class Leg(models.Model):
     def save(self, *args, **kwargs):
         if self.amount.amount == 0:
             raise exceptions.ZeroAmountError()
+
+        # Fill account_type
+        self.account_type = self.account.type
 
         leg = super(Leg, self).save(*args, **kwargs)
         transaction.on_commit(lambda: _enforce_leg(transaction_id=self.transaction_id))
@@ -670,6 +708,24 @@ class Leg(models.Model):
 
     def is_accounting_credit(self):
         return self.accounting_type == self.AccountingTypeChoices.CREDIT
+
+    def accounting_display_amount(self):
+        if self.account_type in Account.LHS_TYPES:
+            if self.is_accounting_debit():
+                # ex: Cash, DEBITed is Increase
+                return self.accounting_amount
+            else:
+                # ex: Cash, CREDITed is Decrease
+                return -self.accounting_amount
+        elif self.account_type in Account.RHS_TYPES:
+            if self.is_accounting_debit():
+                # ex: Liability, DEBITed is Decrease
+                return -self.accounting_amount
+            else:
+                # ex: Liability, CREDITed is Increase
+                return self.accounting_amount
+
+        raise ValueError("Account type {} not supported".format(self.account_type))
 
     def account_balance_after(self):
         """Get the balance of the account associated with this leg following the transaction"""

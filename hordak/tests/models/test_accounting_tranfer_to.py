@@ -21,6 +21,12 @@ class AccountingTransferToTestCase(DataProvider, DbTransactionTestCase):
             Account.objects.filter(type=Account.TYPES.income).net_balance(),
             Balance(150, "EUR"),
         )
+        assert bank.accounting_balance() == Balance(150, "EUR")
+        assert account1.accounting_balance() == Balance(100, "EUR")
+        assert account2.accounting_balance() == Balance(50, "EUR")
+
+        for leg in account1.legs.all():
+            assert leg.accounting_display_amount().amount > 0
 
     def test_accounting_transfer_to(self):
         account1 = self.account(type=Account.TYPES.asset)
@@ -29,6 +35,12 @@ class AccountingTransferToTestCase(DataProvider, DbTransactionTestCase):
         self.assertEqual(transaction.legs.count(), 2)
         self.assertEqual(account1.balance(), Balance(-500, "EUR"))
         self.assertEqual(account2.balance(), Balance(500, "EUR"))
+
+        assert account1.accounting_balance() == Balance(-500, "EUR")
+        assert account2.accounting_balance() == Balance(500, "EUR")
+
+        for leg in account1.legs.all():
+            assert leg.accounting_display_amount().amount < 0
 
     def test_accounting_transfer_to_not_money(self):
         account1 = self.account(type=Account.TYPES.income)
