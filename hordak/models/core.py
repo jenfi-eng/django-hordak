@@ -712,6 +712,18 @@ class Leg(models.Model):
     def accounting_display_amount(self):
         return self._pos_neg() * self.accounting_amount
 
+    def accounting_amount_if_deposit(self):
+        if self.is_deposit():
+            return self.accounting_amount
+
+        return ""
+
+    def accounting_amount_if_withdraw(self):
+        if self.is_withdraw():
+            return self.accounting_amount
+
+        return ""
+
     # Withdraw/Deposit are "positive/negaive" ideas for a given account.
     def is_withdraw(self):
         return self._pos_neg() < 0
