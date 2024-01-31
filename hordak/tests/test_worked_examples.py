@@ -249,35 +249,35 @@ class CommunalHouseholdTestCase(DataProvider, BalanceUtils, TestCase):
                 transaction=transaction,
                 account=self.inc_housemate_1,
                 amount=-620,
-                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT,
                 accounting_amount=620,
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=self.ex_rent,
                 amount=500,
-                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
                 accounting_amount=500,
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=self.ex_elec,
                 amount=20,
-                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
                 accounting_amount=20,
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=self.ex_rates,
                 amount=30,
-                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
                 accounting_amount=30,
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=self.ex_food,
                 amount=70,
-                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
                 accounting_amount=70,
             )
 
@@ -291,35 +291,35 @@ class CommunalHouseholdTestCase(DataProvider, BalanceUtils, TestCase):
                 transaction=transaction,
                 account=self.inc_housemate_2,
                 amount=-620,
-                accounting_type=Leg.AccountingTypeChoices.CREDIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT,
                 accounting_amount=620,
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=self.ex_rent,
                 amount=500,
-                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
                 accounting_amount=500,
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=self.ex_elec,
                 amount=20,
-                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
                 accounting_amount=20,
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=self.ex_rates,
                 amount=30,
-                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
                 accounting_amount=30,
             )
             Leg.objects.create(
                 transaction=transaction,
                 account=self.ex_food,
                 amount=70,
-                accounting_type=Leg.AccountingTypeChoices.DEBIT,
+                accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
                 accounting_amount=70,
             )
 

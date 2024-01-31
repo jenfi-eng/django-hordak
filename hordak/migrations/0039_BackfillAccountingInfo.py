@@ -22,12 +22,12 @@ def backfill_accounting_fields(apps, schema_editor):
 
     # Fetch Leg entries with positive amount and related Account type as "AS" or "EX"
     lhs_legs_dr = Leg.objects.filter(amount__gt=0, account__type__in=lhs_accs)
-    # Update the accounting_type for those Leg entries
-    lhs_legs_dr.update(accounting_type="DR")
+    # Update the accounting_dr_cr for those Leg entries
+    lhs_legs_dr.update(accounting_dr_cr="DR")
 
     lhs_legs_cr = Leg.objects.filter(amount__lt=0, account__type__in=lhs_accs)
-    # Update the accounting_type for those Leg entries
-    lhs_legs_cr.update(accounting_type="CR")
+    # Update the accounting_dr_cr for those Leg entries
+    lhs_legs_cr.update(accounting_dr_cr="CR")
 
     # Assign types to Left Hand Side
     #################################
@@ -37,13 +37,13 @@ def backfill_accounting_fields(apps, schema_editor):
 
     # Fetch Leg entries with positive amount and related Account type NOT as "AS" or "EX"
     rhs_legs_cr = Leg.objects.filter(amount__lt=0).exclude(account__type__in=lhs_accs)
-    # Update the accounting_type for these Leg entries to 'CR'
-    rhs_legs_cr.update(accounting_type="CR")
+    # Update the accounting_dr_cr for these Leg entries to 'CR'
+    rhs_legs_cr.update(accounting_dr_cr="CR")
 
     # Fetch Leg entries with positive amount and related Account type NOT as "AS" or "EX"
     rhs_legs_dr = Leg.objects.filter(amount__gt=0).exclude(account__type__in=lhs_accs)
-    # Update the accounting_type for these Leg entries to 'CR'
-    rhs_legs_dr.update(accounting_type="DR")
+    # Update the accounting_dr_cr for these Leg entries to 'CR'
+    rhs_legs_dr.update(accounting_dr_cr="DR")
 
     # Assign types to Right Hand Side
     #################################
@@ -65,8 +65,8 @@ def backfill_accounting_fields(apps, schema_editor):
         WITH TransactionSums AS (
             SELECT
                 l.transaction_id,
-                SUM(CASE WHEN l.accounting_type = 'DR' THEN l.amount ELSE 0 END) AS dr_sum,
-                SUM(CASE WHEN l.accounting_type = 'CR' THEN l.amount ELSE 0 END) AS cr_sum
+                SUM(CASE WHEN l.accounting_dr_cr = 'DR' THEN l.amount ELSE 0 END) AS dr_sum,
+                SUM(CASE WHEN l.accounting_dr_cr = 'CR' THEN l.amount ELSE 0 END) AS cr_sum
             FROM
                 {table_name} l
             GROUP BY
@@ -104,8 +104,8 @@ def backfill_accounting_fields(apps, schema_editor):
         FROM (
             SELECT
                 l.transaction_id,
-                SUM(CASE WHEN l.accounting_type = 'DR' THEN l.amount ELSE 0 END) AS dr_sum,
-                SUM(CASE WHEN l.accounting_type = 'CR' THEN l.amount ELSE 0 END) AS cr_sum
+                SUM(CASE WHEN l.accounting_dr_cr = 'DR' THEN l.amount ELSE 0 END) AS dr_sum,
+                SUM(CASE WHEN l.accounting_dr_cr = 'CR' THEN l.amount ELSE 0 END) AS cr_sum
             FROM
                 {table_name} l
             GROUP BY

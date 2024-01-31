@@ -139,9 +139,9 @@ class LegForm(forms.ModelForm):
         amount = self.instance.amount
 
         if amount.amount > 0:
-            self.instance.accounting_type = Leg.AccountingTypeChoices.CREDIT
+            self.instance.accounting_dr_cr = Leg.AccountingTypeChoices.CREDIT
         else:
-            self.instance.accounting_type = Leg.AccountingTypeChoices.DEBIT
+            self.instance.accounting_dr_cr = Leg.AccountingTypeChoices.DEBIT
 
         self.instance.accounting_amount = abs(amount)
         return super().save(commit)
@@ -256,28 +256,28 @@ class CurrencyTradeForm(forms.Form):
             transaction=transaction,
             account=source_account,
             amount=source_amount,
-            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT,
             accounting_amount=source_amount,
         )
         Leg.objects.create(
             transaction=transaction,
             account=trading_account,
             amount=-source_amount,
-            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
             accounting_amount=source_amount,
         )
         Leg.objects.create(
             transaction=transaction,
             account=trading_account,
             amount=destination_amount,
-            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT,
             accounting_amount=abs(destination_amount),
         )
         Leg.objects.create(
             transaction=transaction,
             account=destination_account,
             amount=-destination_amount,
-            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
             accounting_amount=abs(destination_amount),
         )
         return transaction

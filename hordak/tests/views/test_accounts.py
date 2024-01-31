@@ -18,14 +18,14 @@ class AccountTransactionsViewTestCase(DataProvider, TestCase):
             amount=-10,
             account=self.bank_account,
             transaction=transaction,
-            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
             accounting_amount=10,
         )
         Leg.objects.create(
             amount=10,
             account=self.income_account,
             transaction=transaction,
-            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT,
             accounting_amount=10,
         )
 

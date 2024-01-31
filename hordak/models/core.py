@@ -397,14 +397,14 @@ class Account(MPTTModel):
             transaction=transaction,
             account=self,
             amount=+amount * direction,
-            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT,
             accounting_amount=amount,
         )
         Leg.objects.create(
             transaction=transaction,
             account=to_account,
             amount=-amount * direction,
-            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
             accounting_amount=amount,
         )
         return transaction
@@ -450,14 +450,14 @@ class Account(MPTTModel):
             transaction=transaction,
             account=self,
             amount=+amount,
-            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT,
             accounting_amount=amount,
         )
         Leg.objects.create(
             transaction=transaction,
             account=to_account,
             amount=-amount,
-            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
             accounting_amount=amount,
         )
 
@@ -544,23 +544,23 @@ class LegQuerySet(models.QuerySet):
         return Balance([Money(r["total"], r["amount_currency"]) for r in result])
 
     # Here you're only dealing with one account type
-    def cr_dr_sets(self):
+    def dr_cr_sets(self):
         cr_set = (
-            self.filter(accounting_type=Leg.AccountingTypeChoices.CREDIT)
-            .values("accounting_amount_currency", "accounting_type", "account_type")
+            self.filter(accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT)
+            .values("accounting_amount_currency", "accounting_dr_cr", "account_type")
             .annotate(total=models.Sum("accounting_amount"))
         )
 
         dr_set = (
-            self.filter(accounting_type=Leg.AccountingTypeChoices.DEBIT)
-            .values("accounting_amount_currency", "accounting_type", "account_type")
+            self.filter(accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT)
+            .values("accounting_amount_currency", "accounting_dr_cr", "account_type")
             .annotate(total=models.Sum("accounting_amount"))
         )
 
         return cr_set, dr_set
 
     def accounting_sum_to_balance(self, account_type):
-        cr_set, dr_set = self.cr_dr_sets()
+        cr_set, dr_set = self.dr_cr_sets()
 
         # Is the account left side or right side of the accounting equation?
         if account_type in Account.LHS_TYPES:
@@ -656,7 +656,7 @@ class Leg(models.Model):
         DEBIT = "DR", _("Debit")
         CREDIT = "CR", _("Credit")
 
-    accounting_type = models.CharField(
+    accounting_dr_cr = models.CharField(
         max_length=2,
         choices=AccountingTypeChoices.choices,
         db_index=True,
@@ -704,10 +704,10 @@ class Leg(models.Model):
         return self.type == CREDIT
 
     def is_accounting_debit(self):
-        return self.accounting_type == self.AccountingTypeChoices.DEBIT
+        return self.accounting_dr_cr == self.AccountingTypeChoices.DEBIT
 
     def is_accounting_credit(self):
-        return self.accounting_type == self.AccountingTypeChoices.CREDIT
+        return self.accounting_dr_cr == self.AccountingTypeChoices.CREDIT
 
     def accounting_display_amount(self):
         if self.account_type in Account.LHS_TYPES:
@@ -910,14 +910,14 @@ class StatementLine(models.Model):
             transaction=transaction,
             account=from_account,
             amount=+(self.amount * -1),
-            accounting_type=Leg.AccountingTypeChoices.CREDIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.CREDIT,
             accounting_amount=self.amount,
         )
         Leg.objects.create(
             transaction=transaction,
             account=to_account,
             amount=-(self.amount * -1),
-            accounting_type=Leg.AccountingTypeChoices.DEBIT,
+            accounting_dr_cr=Leg.AccountingTypeChoices.DEBIT,
             accounting_amount=self.amount,
         )
 

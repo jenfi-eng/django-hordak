@@ -361,7 +361,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name="leg",
-            name="accounting_type",
+            name="accounting_dr_cr",
             field=models.CharField(
                 choices=[("DR", "Debit"), ("CR", "Credit")],
                 db_index=True,

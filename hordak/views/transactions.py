@@ -146,9 +146,9 @@ class TransactionsReconcileView(LoginRequiredMixin, ListView):
 
             if self.object.amount > 0:
                 # OPPOSITE - Always pick the otherside of the transaction
-                accounting_type = Leg.AccountingTypeChoices.DEBIT
+                accounting_dr_cr = Leg.AccountingTypeChoices.DEBIT
             else:
-                accounting_type = Leg.AccountingTypeChoices.CREDIT
+                accounting_dr_cr = Leg.AccountingTypeChoices.CREDIT
 
             Leg.objects.create(
                 transaction=transaction,
@@ -156,7 +156,7 @@ class TransactionsReconcileView(LoginRequiredMixin, ListView):
                 amount=amount,
                 # Note that bank accounts can only have one currency
                 amount_currency=bank_account.currencies[0],
-                accounting_type=accounting_type,
+                accounting_dr_cr=accounting_dr_cr,
                 accounting_amount=abs(self.object.amount),
             )
 
